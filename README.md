@@ -213,6 +213,7 @@ Invoice-Processing-Automation/
     └── (setup-guide.md)
 └── screenshots/
     └── (1.workflow.png)
+    └── (10.error_handler_workflow.png)
     └── (2.scanned_pdf.png)
     └── (3.error_message_alert.png)
     └── (4.missing_required_field_alert.png)
@@ -220,7 +221,7 @@ Invoice-Processing-Automation/
     └── (6.above_threshold_alert.png)
     └── (7.error_handling_workflow.png)
     └── (8.invoice_log.png)
-    └── (Workflow_Architecture_Node_Sequence.png)
+    └── (9.workflow_architecture_node_sequence.png)
 ├── workflows
     └── (Invoice Automation.json)
     └── (Invoice Automation - Error Handler)
