@@ -49,10 +49,9 @@ reads and logs every invoice, and only pings when something looks uncertain or r
 ![Full workflow architecture](screenshots/9.workflow_architecture_node_sequence.png)
 
 **Separate workflow — Error Handler:**
-```mermaid
-flowchart LR
-    X[Error Trigger] --> Y[Slack: workflow failure alert]
-```
+
+![Error handler workflow](screenshots/10.error_handler_workflow.png)
+
 Linked to the main workflow via its Settings → Error Workflow field, so any
 unhandled failure in the main pipeline triggers this one automatically.
 
