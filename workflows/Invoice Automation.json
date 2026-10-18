@@ -1,0 +1,947 @@
+{
+  "name": "Invoice Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "mailbox": "Invoice-Processing",
+        "downloadAttachments": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailReadImap",
+      "typeVersion": 2.2,
+      "position": [
+        -320,
+        -96
+      ],
+      "id": "e85a92f6-ecf0-4292-ba3d-44e926cc33ef",
+      "name": "Email Trigger (IMAP)",
+      "credentials": {
+        "imap": {
+          "id": "JSNF5rS2iWzUuiwj",
+          "name": "IMAP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "=data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        128,
+        -96
+      ],
+      "id": "05c66455-774d-4064-b284-a56387601747",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "jsCode": "const newItems = [];\n\nfor (const item of $input.all()) {\n  const attachmentKeys = Object.keys(item.binary || {});\n\n  for (const key of attachmentKeys) {\n    const file = item.binary[key];\n\n    // Skip anything that isn't a PDF (e.g. an embedded logo image in the email signature)\n    if (file.mimeType !== 'application/pdf') continue;\n\n    newItems.push({\n      json: item.json,        // keep the email's subject/from/date info\n      binary: { data: file }, // always name it \"data\", regardless of the original name\n    });\n  }\n}\n\nreturn newItems;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -96,
+        -96
+      ],
+      "id": "91e778b2-ccc1-4037-993f-5e3911ed596a",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "text": "=  {{ $json.text }}",
+        "attributes": {
+          "attributes": [
+            {
+              "name": "vendor_name",
+              "description": "The name of the comany issued in the invoice",
+              "required": true
+            },
+            {
+              "name": "invoice_number",
+              "description": "The unique invoice number or ID",
+              "required": true
+            },
+            {
+              "name": "invoice_date",
+              "description": "The date the invoice was issued, in YYYY-MM-DD format if possible",
+              "required": true
+            },
+            {
+              "name": "due_date",
+              "description": "The payment due date, if mentioned"
+            },
+            {
+              "name": "subtotal",
+              "type": "number",
+              "description": "The subtotal amount, ONLY if it is printed as a separate line on the invoice. Do not calculate it from the total. Leave this empty if the invoice shows only one combined total."
+            },
+            {
+              "name": "tax_amount",
+              "type": "number",
+              "description": "The tax amount, ONLY if it is printed as a separate line on the invoice. Do not calculate or estimate it. Leave this empty if the tax is not broken out separately."
+            },
+            {
+              "name": "total_amount",
+              "type": "number",
+              "description": "The final total amount",
+              "required": true
+            },
+            {
+              "name": "currency",
+              "description": "The currency code, eg. USD, EUR, INR. Always maintain a standard currency code. Example, for INR use INR only, do not add Rs."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.2,
+      "position": [
+        672,
+        -16
+      ],
+      "id": "f0ee1380-d1c5-400a-9db9-12be8f34deb8",
+      "name": "Information Extractor"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        752,
+        224
+      ],
+      "id": "6786c5b6-164b-432d-bf22-2c63870b2580",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "6bmJRZGMIItAxLxR",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6b7397c5-5727-4655-9a36-3a361ed624d8",
+              "name": "vendor_name",
+              "value": "={{ $json.vendor_name }}",
+              "type": "string"
+            },
+            {
+              "id": "a7c21764-6008-4716-9fa9-fe46be87a423",
+              "name": "invoice_number",
+              "value": "={{ $json.invoice_number }}",
+              "type": "string"
+            },
+            {
+              "id": "dfe4a70f-08ac-4dc3-ad7e-83f1b6c733cd",
+              "name": "invoice_date",
+              "value": "={{ $json.invoice_date }}",
+              "type": "string"
+            },
+            {
+              "id": "17ba5801-e3d4-4154-bd3f-0706b47605ea",
+              "name": "due_date",
+              "value": "={{ $json.due_date }}",
+              "type": "string"
+            },
+            {
+              "id": "a6a83844-8bb6-4076-961a-9ad77d5a8f0f",
+              "name": "subtotal",
+              "value": "={{ $json.subtotal }}",
+              "type": "number"
+            },
+            {
+              "id": "fe2c1fec-5e83-4978-8273-fbaaa9883b52",
+              "name": "total_amount",
+              "value": "={{ $json.total_amount }}",
+              "type": "number"
+            },
+            {
+              "id": "8a1b93e3-2833-4d3e-a167-19709c73ffcd",
+              "name": "currency",
+              "value": "={{ $json.currency }}",
+              "type": "string"
+            },
+            {
+              "id": "d6ec18f0-6f1a-4a0d-a2f7-a8a83159f8da",
+              "name": "=processed_date",
+              "value": "={{ $now.toFormat('yyyy-MM-dd') }}",
+              "type": "string"
+            },
+            {
+              "id": "35be061d-6bcf-43c4-95be-52844916586c",
+              "name": "status",
+              "value": "need_review",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2256,
+        96
+      ],
+      "id": "dda7ea2b-62d1-42de-be46-72080cafd57b",
+      "name": "Flag for Review"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6b7397c5-5727-4655-9a36-3a361ed624d8",
+              "name": "vendor_name",
+              "value": "={{ $json.vendor_name }}",
+              "type": "string"
+            },
+            {
+              "id": "a7c21764-6008-4716-9fa9-fe46be87a423",
+              "name": "invoice_number",
+              "value": "={{ $json.invoice_number }}",
+              "type": "string"
+            },
+            {
+              "id": "dfe4a70f-08ac-4dc3-ad7e-83f1b6c733cd",
+              "name": "invoice_date",
+              "value": "={{ $json.invoice_date }}",
+              "type": "string"
+            },
+            {
+              "id": "17ba5801-e3d4-4154-bd3f-0706b47605ea",
+              "name": "due_date",
+              "value": "={{ $json.due_date }}",
+              "type": "string"
+            },
+            {
+              "id": "a6a83844-8bb6-4076-961a-9ad77d5a8f0f",
+              "name": "subtotal",
+              "value": "={{ $json.subtotal }}",
+              "type": "number"
+            },
+            {
+              "id": "63f9c3e9-5c76-45f6-8502-82b38285810f",
+              "name": "tax_amount",
+              "value": "={{ $json.tax_amount }}",
+              "type": "number"
+            },
+            {
+              "id": "fe2c1fec-5e83-4978-8273-fbaaa9883b52",
+              "name": "total_amount",
+              "value": "={{ $json.total_amount }}",
+              "type": "number"
+            },
+            {
+              "id": "8a1b93e3-2833-4d3e-a167-19709c73ffcd",
+              "name": "currency",
+              "value": "={{ $json.currency }}",
+              "type": "string"
+            },
+            {
+              "id": "d6ec18f0-6f1a-4a0d-a2f7-a8a83159f8da",
+              "name": "=processed_date",
+              "value": "={{ $now.toFormat('yyyy-MM-dd') }}",
+              "type": "string"
+            },
+            {
+              "id": "73a2aff3-5acf-4850-9352-b937a84b5356",
+              "name": "status",
+              "value": "auto_logged",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2256,
+        320
+      ],
+      "id": "08db79a6-772a-4b10-b044-f6d5d5de7456",
+      "name": "Mark as Logged"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "573d9e2c-d4cc-461b-aca5-8d2525d7784e",
+              "leftValue": "={{ $json.is_duplicate }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1760,
+        -32
+      ],
+      "id": "49b7b1b6-aaea-42f5-bcf4-08a28add64dc",
+      "name": "Duplicate_Check",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "1eca3824-84ce-43ea-a979-a90f48e72d55",
+              "leftValue": "={{ $json.output.vendor_name }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "cedc1041-52cd-48ef-8ee1-61492267115e",
+              "leftValue": "={{ $json.output.invoice_number }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "83d6f3f4-6a89-41b9-b200-7034dca2ab99",
+              "leftValue": "={{ $json.output.total_amount }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1024,
+        -16
+      ],
+      "id": "2e02c9a9-f710-46ea-8185-01619cefe21c",
+      "name": "Empty_Field_Check"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "c8ba0ea4-a6c7-4767-9c0b-23e8bc190ea8",
+              "leftValue": "={{ $json.total_amount }}",
+              "rightValue": 1000,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1984,
+        64
+      ],
+      "id": "4e0cd976-7991-42ec-9f4b-17749bb84ca6",
+      "name": "Threshold Check"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": ""
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "vendor_name",
+              "displayName": "vendor_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "invoice_number",
+              "displayName": "invoice_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "invoice_date",
+              "displayName": "invoice_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "due_date",
+              "displayName": "due_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "subtotal",
+              "displayName": "subtotal",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "tax_amount",
+              "displayName": "tax_amount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "total_amount",
+              "displayName": "total_amount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "currency",
+              "displayName": "currency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "processed_date",
+              "displayName": "processed_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2528,
+        208
+      ],
+      "id": "61db22b6-ea49-4b71-9748-0adf36ecba8f",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleApi": {
+          "id": "yXRsB6IOM8O1lUqE",
+          "name": "Google Service Account account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const normalize = (val) => String(val ?? '').trim();\n\nconst existingInvoiceNumbers = $input.all()\n  .map(row => normalize(row.json.invoice_number))\n  .filter(Boolean);\n\nconst originalItems = $('Information Extractor').all();\n\nreturn originalItems.map(item => {\n  const extracted = item.json.output; // the actual extracted invoice fields live one level deeper, here\n  const thisInvoiceNumber = normalize(extracted.invoice_number);\n\n  return {\n    json: {\n      ...extracted,  // spread the real fields (vendor_name, invoice_number, total_amount, etc.) flat\n      is_duplicate: existingInvoiceNumbers.includes(thisInvoiceNumber),\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1536,
+        -32
+      ],
+      "id": "b4344a39-3a0c-4f31-bc9d-e83814d017da",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "documentId": {
+          "__rl": true,
+          "value": "",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": ""
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "invoice_number",
+              "lookupValue": "={{ $json.output.invoice_number }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1248,
+        80
+      ],
+      "id": "16645ad5-d934-4b00-81bb-c2277efe1ae5",
+      "name": "Get row(s) in sheet1",
+      "alwaysOutputData": true,
+      "executeOnce": false,
+      "credentials": {
+        "googleApi": {
+          "id": "yXRsB6IOM8O1lUqE",
+          "name": "Google Service Account account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "adb70f82-da5e-4d7a-9e2b-cf182aa58371",
+              "leftValue": "={{ $json.text }}",
+              "rightValue": "20",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        352,
+        -96
+      ],
+      "id": "b5451455-cc92-4003-84f5-d8f51f55df27",
+      "name": "Scanned PDF Check"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "#invoice_alerts",
+          "mode": "id"
+        },
+        "text": "= ⚠️ Invoice processing issue: missing required field(s).\n\nFile:  {{ $('Email Trigger (IMAP)').item.json.subject }}\n\nThe extracted PDF file has too little or no text. Likely Scanned PDF",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        672,
+        -208
+      ],
+      "id": "9d3c4730-53f6-4595-b73d-39427008a29e",
+      "name": "Scanned PDF Error Message",
+      "webhookId": "cb097f48-ec30-439d-b3bd-bb288b35ee2a",
+      "credentials": {
+        "slackApi": {
+          "id": "v2xwdU7gr14B3Q1U",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "#invoice_alerts",
+          "mode": "id"
+        },
+        "text": "= ⚠️ Invoice processing issue: missing required field(s).\n\nFile:  {{ $('Email Trigger (IMAP)').item.json.subject }}\n\nVendor: {{ $('Information Extractor').item.json.output.vendor_name }}\n\nInvoice: {{ $('Information Extractor').item.json.output.invoice_number }}\n\nTotal: {{ $('Information Extractor').item.json.output.total_amount }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        1248,
+        -112
+      ],
+      "id": "2494fa20-d646-43d0-bd88-926b04053d44",
+      "name": "Empty Field Error Message",
+      "webhookId": "cb097f48-ec30-439d-b3bd-bb288b35ee2a",
+      "credentials": {
+        "slackApi": {
+          "id": "v2xwdU7gr14B3Q1U",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "#invoice_alerts",
+          "mode": "id"
+        },
+        "text": "=🔁 Duplicate invoice detected — already processed.\n\nInvoice: {{ $('Information Extractor').item.json.output.invoice_number }}\n\nVendor: {{ $('Information Extractor').item.json.output.vendor_name }}\n\nAttempted Total: {{ $('Information Extractor').item.json.output.total_amount }}\n\nThis invoice number already exists in the log. No new row was added.",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        1984,
+        -128
+      ],
+      "id": "8208efb1-ee38-423f-a508-4bbd3b05c64b",
+      "name": "Duplicate Error Message",
+      "webhookId": "cb097f48-ec30-439d-b3bd-bb288b35ee2a",
+      "credentials": {
+        "slackApi": {
+          "id": "v2xwdU7gr14B3Q1U",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "#invoice_alerts",
+          "mode": "id"
+        },
+        "text": "=📋 Invoice above review threshold — logged, but please verify.\n\nVendor: {{ $json.vendor_name }}\n\nInvoice: {{ $json.invoice_number }}\n\nTotal: {{ $json.total_amount }}{{ $json.currency }}\n\nThis has been recorded with status \"need_review\" in the Invoice Log",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        2256,
+        -96
+      ],
+      "id": "d8a954c5-4380-4afa-8465-2a6f229e2405",
+      "name": "Above Threshold Notification",
+      "webhookId": "cb097f48-ec30-439d-b3bd-bb288b35ee2a",
+      "credentials": {
+        "slackApi": {
+          "id": "v2xwdU7gr14B3Q1U",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Email Trigger (IMAP)": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Scanned PDF Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Information Extractor": {
+      "main": [
+        [
+          {
+            "node": "Empty_Field_Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Duplicate_Check": {
+      "main": [
+        [
+          {
+            "node": "Duplicate Error Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Threshold Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Empty_Field_Check": {
+      "main": [
+        [
+          {
+            "node": "Empty Field Error Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get row(s) in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Threshold Check": {
+      "main": [
+        [
+          {
+            "node": "Flag for Review",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Above Threshold Notification",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark as Logged",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        []
+      ]
+    },
+    "Mark as Logged": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Flag for Review": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Duplicate_Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scanned PDF Check": {
+      "main": [
+        [
+          {
+            "node": "Scanned PDF Error Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Information Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "OFAQ0bUChkqQ7uwc",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "901418f8-4049-4ae9-9ae0-4c6a53c8999b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "76053603674d23eb8003fbce3ccb409b51d107b586cb8d7534936032a993b34f"
+  },
+  "nodeGroups": [],
+  "id": "8ez8EgDQaFIbIYZn",
+  "tags": []
+}

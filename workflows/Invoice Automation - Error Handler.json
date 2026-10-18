@@ -1,0 +1,70 @@
+{
+  "name": "Invoice Automation - Error Handler",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "7264634d-f628-4080-8c24-062869f2896b",
+      "name": "Error Trigger"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "#invoice-alerts",
+          "mode": "id"
+        },
+        "text": "= 🚨 Invoice automation workflow failed!\nWorkflow: {{ $json.workflow.name }}\n\nFailed node: {{ $json.execution.lastNodeExecuted }}\n\nError: {{ $json.execution.error.message }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        224,
+        0
+      ],
+      "id": "1c1f0ad7-d685-471c-96cf-b7525c2283b6",
+      "name": "Send a message",
+      "webhookId": "8dbff9dc-a35b-4af5-96d0-e07270da6127",
+      "credentials": {
+        "slackApi": {
+          "id": "v2xwdU7gr14B3Q1U",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "8323dca7-d490-4eb7-8603-b9c9952d70d8",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "76053603674d23eb8003fbce3ccb409b51d107b586cb8d7534936032a993b34f"
+  },
+  "nodeGroups": [],
+  "id": "OFAQ0bUChkqQ7uwc",
+  "tags": []
+}
