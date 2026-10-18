@@ -133,8 +133,8 @@ In the Email Trigger (IMAP) node, set **Mailbox** to a dedicated label/folder
 ## 6. Importing the Workflow JSON Files
 
 This repo includes two exported workflow files:
-- `invoice-automation-workflow.json` — the main pipeline
-- `invoice-automation-error-handler.json` — the error-handling workflow
+- `Invoice Automation.json` — the main pipeline
+- `Invoice Automation - Error Handler.json` — the error-handling workflow
 
 **To import each one:**
 1. In n8n, go to the workflows list
