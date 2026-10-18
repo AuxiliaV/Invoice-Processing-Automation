@@ -46,7 +46,7 @@ reads and logs every invoice, and only pings when something looks uncertain or r
 
 ## 3. Workflow Architecture and Node Sequence
 
-![Full workflow architecture]screenshots/9.workflow_architecture_node_sequence.png
+![Full workflow architecture](screenshots/9.workflow_architecture_node_sequence.png)
 
 **Separate workflow — Error Handler:**
 ```mermaid
